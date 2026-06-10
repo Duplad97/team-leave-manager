@@ -7,15 +7,28 @@ export interface TeamMember {
   rotationOrder: number;
 }
 
+export interface LeaveComment {
+  id: number;
+  leaveRequestId: number;
+  authorId: number;
+  authorName: string;
+  commentText: string;
+  createdAt: string;
+}
+
 export interface LeaveRequest {
   id: number;
   teamMemberId: number;
   teamMemberName: string;
+  approverId?: number;
+  approverName?: string;
   startDate: string;
   endDate: string;
   reason: string;
   status: LeaveStatus;
   createdAt: string;
+  approvedAt?: string;
+  comments: LeaveComment[];
 }
 
 export interface OnCallWeek {
@@ -32,6 +45,17 @@ export interface CreateLeaveRequest {
   startDate: string;
   endDate: string;
   reason: string;
+}
+
+export interface CreateLeaveComment {
+  leaveRequestId: number;
+  authorId: number;
+  commentText: string;
+}
+
+export interface UpdateLeaveStatus {
+  status: LeaveStatus;
+  approverId?: number;
 }
 
 export interface ApiError {

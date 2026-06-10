@@ -20,6 +20,7 @@ import { formatDateRange, weekLabel } from '../utils/dates';
 import { LoadingState } from './LoadingState';
 import { SectionCard } from './SectionCard';
 import { StatCard } from './StatCard';
+import { ReplacementSuggestions } from './ReplacementSuggestions';
 
 export function OnCallSchedule() {
   const schedule = useAtomValue(onCallScheduleQueryAtom);
@@ -114,35 +115,42 @@ export function OnCallSchedule() {
                     </Stack>
                   </TableCell>
                   <TableCell>
-                    {week.hasConflict ? (
-                      <Stack spacing={0.75}>
+                    <Stack spacing={1}>
+                      {week.hasConflict ? (
+                        <Stack spacing={0.75}>
+                          <Chip
+                            icon={<WarningAmberIcon />}
+                            label="On approved leave"
+                            color="warning"
+                            size="small"
+                            sx={{ alignSelf: 'flex-start' }}
+                          />
+                          {week.conflictingLeave.map((leave) => (
+                            <Box key={leave.id}>
+                              <Typography
+                                variant="caption"
+                                color="text.secondary"
+                                sx={{ display: 'block' }}
+                              >
+                                {formatDateRange(leave.startDate, leave.endDate)}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {leave.reason}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Stack>
+                      ) : (
                         <Chip
-                          icon={<WarningAmberIcon />}
-                          label="On approved leave"
-                          color="warning"
+                          icon={<CheckCircleOutlinedIcon />}
+                          label="Available"
+                          color="success"
                           size="small"
-                          sx={{ alignSelf: 'flex-start' }}
+                          variant="outlined"
                         />
-                        {week.conflictingLeave.map((leave) => (
-                          <Box key={leave.id}>
-                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
-                              {formatDateRange(leave.startDate, leave.endDate)}
-                            </Typography>
-                            <Typography variant="caption" color="text.secondary">
-                              {leave.reason}
-                            </Typography>
-                          </Box>
-                        ))}
-                      </Stack>
-                    ) : (
-                      <Chip
-                        icon={<CheckCircleOutlinedIcon />}
-                        label="Available"
-                        color="success"
-                        size="small"
-                        variant="outlined"
-                      />
-                    )}
+                      )}
+                      <ReplacementSuggestions onCallWeek={week} />
+                    </Stack>
                   </TableCell>
                 </TableRow>
               ))}

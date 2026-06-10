@@ -3,6 +3,7 @@ package com.teamleave.controller;
 import com.teamleave.dto.CreateLeaveRequestDto;
 import com.teamleave.dto.LeaveRequestDto;
 import com.teamleave.dto.UpdateLeaveStatusDto;
+import com.teamleave.model.LeaveStatus;
 import com.teamleave.service.LeaveRequestService;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -12,6 +13,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 @RestController
@@ -25,7 +27,16 @@ public class LeaveRequestController {
     }
 
     @GetMapping
-    public List<LeaveRequestDto> getAll() {
+    public List<LeaveRequestDto> getAll(
+            @RequestParam(required = false) Long teamMemberId,
+            @RequestParam(required = false) LeaveStatus status) {
+        if (teamMemberId != null && status != null) {
+            return leaveRequestService.getByTeamMemberAndStatus(teamMemberId, status);
+        } else if (teamMemberId != null) {
+            return leaveRequestService.getByTeamMember(teamMemberId);
+        } else if (status != null) {
+            return leaveRequestService.getByStatus(status);
+        }
         return leaveRequestService.getAll();
     }
 

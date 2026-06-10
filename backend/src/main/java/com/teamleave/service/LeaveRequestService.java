@@ -9,6 +9,7 @@ import com.teamleave.model.LeaveStatus;
 import com.teamleave.model.TeamMember;
 import com.teamleave.repository.LeaveRequestRepository;
 import com.teamleave.repository.TeamMemberRepository;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.HttpStatus;
@@ -87,9 +88,43 @@ public class LeaveRequestService {
                         HttpStatus.CONFLICT,
                         "Cannot approve: another leave request overlaps these dates");
             }
+
+            // Set approver and approval timestamp
+            if (dto.approverId() != null) {
+                TeamMember approver = teamMemberRepository
+                        .findById(dto.approverId())
+                        .orElseThrow(
+                                () -> new ApiException(HttpStatus.NOT_FOUND, "Approver not found"));
+                request.setApprover(approver);
+            }
+            request.setApprovedAt(Instant.now());
         }
 
         request.setStatus(dto.status());
         return LeaveRequestDto.from(leaveRequestRepository.save(request));
+    }
+
+    @Transactional(readOnly = true)
+    public List<LeaveRequestDto> getByTeamMember(Long teamMemberId) {
+        return leaveRequestRepository.findByTeamMemberIdOrderByStartDateDesc(teamMemberId)
+                .stream()
+                .map(LeaveRequestDto::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<LeaveRequestDto> getByStatus(LeaveStatus status) {
+        return leaveRequestRepository.findByStatusOrderByStartDateDesc(status).stream()
+                .map(LeaveRequestDto::from)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<LeaveRequestDto> getByTeamMemberAndStatus(Long teamMemberId, LeaveStatus status) {
+        return leaveRequestRepository
+                .findByTeamMemberIdAndStatusOrderByStartDateDesc(teamMemberId, status)
+                .stream()
+                .map(LeaveRequestDto::from)
+                .toList();
     }
 }

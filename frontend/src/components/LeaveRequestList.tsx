@@ -2,9 +2,13 @@ import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import EventBusyIcon from '@mui/icons-material/EventBusy';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CancelOutlinedIcon from '@mui/icons-material/CancelOutlined';
+import CommentOutlinedIcon from '@mui/icons-material/CommentOutlined';
+import ExpandLessIcon from '@mui/icons-material/ExpandLess';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Button from '@mui/material/Button';
+import Collapse from '@mui/material/Collapse';
 import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
@@ -16,7 +20,12 @@ import TableRow from '@mui/material/TableRow';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { useAtom, useAtomValue } from 'jotai';
-import { leaveRequestsQueryAtom, updateLeaveStatusAtom } from '../store/atoms';
+import { Fragment, useState } from 'react';
+import {
+  leaveRequestsQueryAtom,
+  updateLeaveStatusAtom,
+  teamMembersQueryAtom,
+} from '../store/atoms';
 import { memberAvatarColor } from '../theme';
 import type { LeaveRequest, LeaveStatus } from '../types';
 import { formatDateRange } from '../utils/dates';
@@ -25,16 +34,28 @@ import { LoadingState } from './LoadingState';
 import { SectionCard } from './SectionCard';
 import { StatCard } from './StatCard';
 import { StatusChip } from './StatusChip';
+import { LeaveRequestFilters } from './LeaveRequestFilters';
+import { CommentsPanel } from './CommentsPanel';
 
 function LeaveActions({ request }: { request: LeaveRequest }) {
   const [, updateStatus] = useAtom(updateLeaveStatusAtom);
+  const members = useAtomValue(teamMembersQueryAtom);
+
+  const memberList = members.state === 'hasData' ? members.data : [];
+  const currentUser = memberList.length > 0 ? memberList[0] : null;
 
   async function handleStatus(status: LeaveStatus) {
-    await updateStatus({ id: request.id, status });
+    const approverId =
+      status === 'APPROVED' && currentUser ? currentUser.id : undefined;
+    await updateStatus({ id: request.id, data: { status, approverId } });
   }
 
   if (request.status !== 'PENDING') {
-    return <Typography variant="caption" color="text.secondary">—</Typography>;
+    return (
+      <Typography variant="caption" color="text.secondary">
+        —
+      </Typography>
+    );
   }
 
   return (
@@ -71,6 +92,7 @@ function countByStatus(requests: LeaveRequest[], status: LeaveStatus): number {
 
 export function LeaveRequestList() {
   const requests = useAtomValue(leaveRequestsQueryAtom);
+  const [expandedCommentsId, setExpandedCommentsId] = useState<number | null>(null);
 
   if (requests.state === 'loading') {
     return <LoadingState variant="table" count={5} />;
@@ -81,6 +103,10 @@ export function LeaveRequestList() {
   }
 
   const data = requests.data;
+
+  function toggleComments(requestId: number) {
+    setExpandedCommentsId((current) => (current === requestId ? null : requestId));
+  }
 
   return (
     <Stack spacing={3}>
@@ -111,14 +137,15 @@ export function LeaveRequestList() {
         </Grid>
       </Grid>
 
-      {data.length === 0 ? (
-        <EmptyState
-          icon={<EventBusyIcon />}
-          title="No leave requests yet"
-          description="Submit a new request using the form above. Approved and pending time off will appear here."
-        />
-      ) : (
-        <SectionCard title="All Requests" subtitle={`${data.length} total request${data.length === 1 ? '' : 's'}`} flush>
+      <SectionCard title="All Requests" subtitle={`${data.length} total request${data.length === 1 ? '' : 's'}`} flush>
+        <LeaveRequestFilters />
+        {data.length === 0 ? (
+          <EmptyState
+            icon={<EventBusyIcon />}
+            title="No matching leave requests"
+            description="Try adjusting or clearing filters, or submit a new leave request."
+          />
+        ) : (
           <TableContainer>
             <Table>
               <TableHead>
@@ -127,50 +154,80 @@ export function LeaveRequestList() {
                   <TableCell>Dates</TableCell>
                   <TableCell>Reason</TableCell>
                   <TableCell>Status</TableCell>
+                  <TableCell align="center">Comments</TableCell>
                   <TableCell align="right">Actions</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {data.map((request) => (
-                  <TableRow key={request.id} hover>
-                    <TableCell>
-                      <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
-                        <Avatar
-                          sx={{
-                            width: 32,
-                            height: 32,
-                            fontSize: '0.8rem',
-                            bgcolor: memberAvatarColor(request.teamMemberName),
-                          }}
-                        >
-                          {request.teamMemberName[0]}
-                        </Avatar>
-                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {request.teamMemberName}
-                        </Typography>
-                      </Stack>
-                    </TableCell>
-                    <TableCell>
-                      <Typography variant="body2">{formatDateRange(request.startDate, request.endDate)}</Typography>
-                    </TableCell>
-                    <TableCell sx={{ maxWidth: 240 }}>
-                      <Typography variant="body2" color="text.secondary" noWrap>
-                        {request.reason}
-                      </Typography>
-                    </TableCell>
-                    <TableCell>
-                      <StatusChip status={request.status} />
-                    </TableCell>
-                    <TableCell align="right">
-                      <LeaveActions request={request} />
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {data.map((request) => {
+                  const isCommentsOpen = expandedCommentsId === request.id;
+                  const commentCount = request.comments?.length ?? 0;
+
+                  return (
+                    <Fragment key={request.id}>
+                      <TableRow hover>
+                        <TableCell>
+                          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                            <Avatar
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                fontSize: '0.8rem',
+                                bgcolor: memberAvatarColor(request.teamMemberName),
+                              }}
+                            >
+                              {request.teamMemberName[0]}
+                            </Avatar>
+                            <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                              {request.teamMemberName}
+                            </Typography>
+                          </Stack>
+                        </TableCell>
+                        <TableCell>
+                          <Typography variant="body2">{formatDateRange(request.startDate, request.endDate)}</Typography>
+                        </TableCell>
+                        <TableCell sx={{ maxWidth: 240 }}>
+                          <Typography variant="body2" color="text.secondary" noWrap>
+                            {request.reason}
+                          </Typography>
+                        </TableCell>
+                        <TableCell>
+                          <StatusChip status={request.status} />
+                        </TableCell>
+                        <TableCell align="center">
+                          <Button
+                            size="small"
+                            variant={isCommentsOpen ? 'contained' : 'outlined'}
+                            color="inherit"
+                            startIcon={<CommentOutlinedIcon fontSize="small" />}
+                            endIcon={isCommentsOpen ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+                            onClick={() => toggleComments(request.id)}
+                            sx={{ textTransform: 'none' }}
+                          >
+                            {commentCount}
+                          </Button>
+                        </TableCell>
+                        <TableCell align="right">
+                          <LeaveActions request={request} />
+                        </TableCell>
+                      </TableRow>
+                      <TableRow>
+                        <TableCell colSpan={6} sx={{ py: 0, borderBottom: isCommentsOpen ? undefined : 'none' }}>
+                          <Collapse in={isCommentsOpen} timeout="auto" unmountOnExit>
+                            <Stack sx={{ p: 2 }}>
+                              <CommentsPanel leaveRequest={request} />
+                            </Stack>
+                          </Collapse>
+                        </TableCell>
+                      </TableRow>
+                    </Fragment>
+                  );
+                })}
               </TableBody>
             </Table>
           </TableContainer>
-        </SectionCard>
-      )}
+        )}
+      </SectionCard>
     </Stack>
   );
 }
