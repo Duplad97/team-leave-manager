@@ -12,6 +12,11 @@ import Typography from '@mui/material/Typography';
 import { useAtom, useAtomValue } from 'jotai';
 import { useState } from 'react';
 import { createLeaveAtom, teamMembersQueryAtom } from '../store/atoms';
+import {
+  earliestLeaveDate,
+  minEndDateForLeave,
+  validateLeaveDates,
+} from '../utils/dates';
 import { LoadingState } from './LoadingState';
 
 export function LeaveRequestForm() {
@@ -31,11 +36,27 @@ export function LeaveRequestForm() {
   }
 
   const memberList = members.state === 'hasData' ? members.data : [];
+  const minStartDate = earliestLeaveDate();
+  const minEndDate = minEndDateForLeave(startDate);
+
+  function handleStartDateChange(value: string) {
+    setStartDate(value);
+    if (endDate && value && endDate < value) {
+      setEndDate(value);
+    }
+  }
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setError(null);
     setSuccess(false);
+
+    const validationError = validateLeaveDates(startDate, endDate);
+    if (validationError) {
+      setError(validationError);
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -64,7 +85,8 @@ export function LeaveRequestForm() {
           <Box>
             <Typography variant="h6">New Leave Request</Typography>
             <Typography variant="body2" color="text.secondary">
-              Overlapping requests for the same person are automatically blocked.
+              Leave can only be requested from tomorrow onwards. Overlapping requests for the
+              same person are automatically blocked.
             </Typography>
           </Box>
 
@@ -98,8 +120,11 @@ export function LeaveRequestForm() {
                 label="Start date"
                 type="date"
                 value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
+                onChange={(e) => handleStartDateChange(e.target.value)}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: { min: minStartDate },
+                }}
                 required
                 fullWidth
               />
@@ -108,7 +133,10 @@ export function LeaveRequestForm() {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                slotProps={{ inputLabel: { shrink: true } }}
+                slotProps={{
+                  inputLabel: { shrink: true },
+                  htmlInput: { min: minEndDate },
+                }}
                 required
                 fullWidth
               />

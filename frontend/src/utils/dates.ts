@@ -41,4 +41,36 @@ export function buildCalendarWeeks(weekCount = CALENDAR_WEEKS): dayjs.Dayjs[][] 
   return weeks;
 }
 
+export function earliestLeaveDate(): string {
+  return dayjs().add(1, 'day').format('YYYY-MM-DD');
+}
+
+export function validateLeaveDates(startDate: string, endDate: string): string | null {
+  if (!startDate || !endDate) {
+    return null;
+  }
+
+  const earliest = dayjs().add(1, 'day').startOf('day');
+  const start = dayjs(startDate);
+  const end = dayjs(endDate);
+
+  if (start.isBefore(earliest, 'day')) {
+    return 'Leave can only be requested from tomorrow onwards';
+  }
+
+  if (end.isBefore(start, 'day')) {
+    return 'End date must be on or after start date';
+  }
+
+  return null;
+}
+
+export function minEndDateForLeave(startDate: string): string {
+  const earliest = earliestLeaveDate();
+  if (!startDate) {
+    return earliest;
+  }
+  return dayjs(startDate).isAfter(dayjs(earliest), 'day') ? startDate : earliest;
+}
+
 export { CALENDAR_WEEKS };

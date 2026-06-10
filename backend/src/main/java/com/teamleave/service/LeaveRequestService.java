@@ -9,6 +9,7 @@ import com.teamleave.model.LeaveStatus;
 import com.teamleave.model.TeamMember;
 import com.teamleave.repository.LeaveRequestRepository;
 import com.teamleave.repository.TeamMemberRepository;
+import java.time.LocalDate;
 import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -36,6 +37,13 @@ public class LeaveRequestService {
 
     @Transactional
     public LeaveRequestDto create(CreateLeaveRequestDto dto) {
+        LocalDate earliestStart = LocalDate.now().plusDays(1);
+
+        if (dto.startDate().isBefore(earliestStart)) {
+            throw new ApiException(
+                    HttpStatus.BAD_REQUEST, "Leave can only be requested from tomorrow onwards");
+        }
+
         if (dto.endDate().isBefore(dto.startDate())) {
             throw new ApiException(HttpStatus.BAD_REQUEST, "End date must be on or after start date");
         }
