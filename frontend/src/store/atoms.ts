@@ -26,9 +26,15 @@ const onCallScheduleBaseAtom = atom(async (get) => {
   return fetchOnCallSchedule(8);
 });
 
+const onCallCalendarBaseAtom = atom(async (get) => {
+  get(refreshCounterAtom);
+  return fetchOnCallSchedule(6);
+});
+
 export const teamMembersQueryAtom = loadable(teamMembersBaseAtom);
 export const leaveRequestsQueryAtom = loadable(leaveRequestsBaseAtom);
 export const onCallScheduleQueryAtom = loadable(onCallScheduleBaseAtom);
+export const onCallCalendarQueryAtom = loadable(onCallCalendarBaseAtom);
 
 export const refreshDataAtom = atom(null, (get, set) => {
   set(refreshCounterAtom, get(refreshCounterAtom) + 1);

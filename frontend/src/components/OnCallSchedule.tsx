@@ -1,8 +1,10 @@
+import CheckCircleOutlinedIcon from '@mui/icons-material/CheckCircleOutlined';
 import WarningAmberIcon from '@mui/icons-material/WarningAmber';
 import Alert from '@mui/material/Alert';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
+import Avatar from '@mui/material/Avatar';
+import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
+import Grid from '@mui/material/Grid';
 import Stack from '@mui/material/Stack';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -13,30 +15,55 @@ import TableRow from '@mui/material/TableRow';
 import Typography from '@mui/material/Typography';
 import { useAtomValue } from 'jotai';
 import { onCallScheduleQueryAtom } from '../store/atoms';
+import { memberAvatarColor } from '../theme';
 import { formatDateRange, weekLabel } from '../utils/dates';
+import { LoadingState } from './LoadingState';
+import { SectionCard } from './SectionCard';
+import { StatCard } from './StatCard';
 
 export function OnCallSchedule() {
   const schedule = useAtomValue(onCallScheduleQueryAtom);
 
   if (schedule.state === 'loading') {
-    return <Typography color="text.secondary">Loading on-call schedule…</Typography>;
+    return <LoadingState variant="table" count={8} />;
   }
 
   if (schedule.state === 'hasError') {
-    return <Alert severity="error">Failed to load on-call schedule.</Alert>;
+    return <Alert severity="error" variant="outlined">Failed to load on-call schedule.</Alert>;
   }
 
+  const data = schedule.data;
+  const conflictCount = data.filter((w) => w.hasConflict).length;
+  const availableCount = data.length - conflictCount;
+
   return (
-    <Card variant="outlined">
-      <CardContent>
-        <Typography variant="h6" gutterBottom>
-          On-Call Rotation
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-          Weekly rotation: Alice → Bob → Charlie → Diana, then repeats.
-        </Typography>
+    <Stack spacing={3}>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <StatCard
+            label="Weeks covered"
+            value={data.length}
+            icon={<CheckCircleOutlinedIcon />}
+            accent="#1e3a5f"
+          />
+        </Grid>
+        <Grid size={{ xs: 12, sm: 6 }}>
+          <StatCard
+            label="Schedule conflicts"
+            value={conflictCount}
+            icon={<WarningAmberIcon />}
+            accent={conflictCount > 0 ? '#d97706' : '#16a34a'}
+          />
+        </Grid>
+      </Grid>
+
+      <SectionCard
+        title="Rotation Schedule"
+        subtitle="Alice → Bob → Charlie → Diana, repeating weekly"
+        flush
+      >
         <TableContainer>
-          <Table size="small">
+          <Table>
             <TableHead>
               <TableRow>
                 <TableCell>Week</TableCell>
@@ -46,34 +73,75 @@ export function OnCallSchedule() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {schedule.data.map((week) => (
+              {data.map((week) => (
                 <TableRow
                   key={week.weekNumber}
                   hover
-                  sx={week.hasConflict ? { bgcolor: 'warning.50' } : undefined}
+                  sx={
+                    week.hasConflict
+                      ? {
+                          bgcolor: 'warning.light',
+                          '&:hover': { bgcolor: 'warning.light' },
+                        }
+                      : undefined
+                  }
                 >
-                  <TableCell>Week {week.weekNumber}</TableCell>
-                  <TableCell>{weekLabel(week.weekStart, week.weekEnd)}</TableCell>
                   <TableCell>
-                    <Typography sx={{ fontWeight: 600 }}>{week.onCallMember.name}</Typography>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                      Week {week.weekNumber}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Typography variant="body2" color="text.secondary">
+                      {weekLabel(week.weekStart, week.weekEnd)}
+                    </Typography>
+                  </TableCell>
+                  <TableCell>
+                    <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
+                      <Avatar
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          fontSize: '0.8rem',
+                          bgcolor: memberAvatarColor(week.onCallMember.name),
+                        }}
+                      >
+                        {week.onCallMember.name[0]}
+                      </Avatar>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        {week.onCallMember.name}
+                      </Typography>
+                    </Stack>
                   </TableCell>
                   <TableCell>
                     {week.hasConflict ? (
-                      <Stack spacing={0.5}>
+                      <Stack spacing={0.75}>
                         <Chip
                           icon={<WarningAmberIcon />}
                           label="On approved leave"
                           color="warning"
                           size="small"
+                          sx={{ alignSelf: 'flex-start' }}
                         />
                         {week.conflictingLeave.map((leave) => (
-                          <Typography key={leave.id} variant="caption" color="text.secondary">
-                            {formatDateRange(leave.startDate, leave.endDate)} — {leave.reason}
-                          </Typography>
+                          <Box key={leave.id}>
+                            <Typography variant="caption" color="text.secondary" sx={{ display: 'block' }}>
+                              {formatDateRange(leave.startDate, leave.endDate)}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {leave.reason}
+                            </Typography>
+                          </Box>
                         ))}
                       </Stack>
                     ) : (
-                      <Chip label="Available" color="success" size="small" variant="outlined" />
+                      <Chip
+                        icon={<CheckCircleOutlinedIcon />}
+                        label="Available"
+                        color="success"
+                        size="small"
+                        variant="outlined"
+                      />
                     )}
                   </TableCell>
                 </TableRow>
@@ -81,7 +149,13 @@ export function OnCallSchedule() {
             </TableBody>
           </Table>
         </TableContainer>
-      </CardContent>
-    </Card>
+      </SectionCard>
+
+      {availableCount === data.length && (
+        <Alert severity="success" variant="outlined">
+          No on-call conflicts detected in the next {data.length} weeks.
+        </Alert>
+      )}
+    </Stack>
   );
 }
