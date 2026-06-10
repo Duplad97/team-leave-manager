@@ -2,6 +2,9 @@
 
 A simple web app for managing team leave requests and viewing the on-call rotation schedule.
 
+[![Backend Tests](https://github.com/Duplad97/team-leave-manager/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/Duplad97/team-leave-manager/actions/workflows/backend-tests.yml)
+[![Frontend Tests](https://github.com/Duplad97/team-leave-manager/actions/workflows/frontend-tests.yml/badge.svg)](https://github.com/Duplad97/team-leave-manager/actions/workflows/frontend-tests.yml)
+
 ## Features
 
 - View prepopulated team members (Alice, Bob, Charlie, Diana)
@@ -68,6 +71,27 @@ Open http://localhost:5173 — the Vite dev server proxies `/api` to the backend
 | POST   | `/api/leave-requests`           | Create leave request     |
 | PATCH  | `/api/leave-requests/{id}/status` | Update request status  |
 | GET    | `/api/on-call?weeks=8`          | On-call schedule         |
+
+## Testing
+
+### Frontend tests
+
+```bash
+cd frontend
+npm test
+```
+
+### Backend tests
+
+```bash
+cd backend
+./mvnw test
+```
+
+## CI Workflows
+
+- Backend workflow: [.github/workflows/backend-tests.yml](.github/workflows/backend-tests.yml)
+- Frontend workflow: [.github/workflows/frontend-tests.yml](.github/workflows/frontend-tests.yml)
 
 ## Supabase
 
