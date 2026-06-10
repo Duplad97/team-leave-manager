@@ -2,26 +2,6 @@
 
 A simple web app for managing team leave requests and viewing the on-call rotation schedule.
 
-[![Backend Tests](https://github.com/Duplad97/team-leave-manager/actions/workflows/backend-tests.yml/badge.svg)](https://github.com/Duplad97/team-leave-manager/actions/workflows/backend-tests.yml)
-[![Frontend Tests](https://github.com/Duplad97/team-leave-manager/actions/workflows/frontend-tests.yml/badge.svg)](https://github.com/Duplad97/team-leave-manager/actions/workflows/frontend-tests.yml)
-
-## Features
-
-- View prepopulated team members (Alice, Bob, Charlie, Diana)
-- Create leave requests with overlap prevention
-- Approve, reject, or leave requests pending
-- List and calendar views for leave
-- Weekly on-call rotation with conflict highlighting when the on-call person has approved leave
-
-## Stack
-
-| Layer    | Technology              |
-|----------|-------------------------|
-| Frontend | React, TypeScript, Jotai, MUI |
-| Backend  | Java Spring Boot        |
-| Database | PostgreSQL (Supabase-compatible) |
-| Runtime  | Docker Compose          |
-
 ## Quick Start (Docker)
 
 ```bash
@@ -33,6 +13,33 @@ docker compose up --build
 | Frontend | http://localhost:3000  |
 | Backend  | http://localhost:8080  |
 | Database | localhost:5432         |
+
+## Features
+
+- View prepopulated team members (Alice, Bob, Charlie, Diana)
+- Create leave requests with overlap prevention
+- Approve, reject, or leave requests pending
+- List and calendar views for leave
+- Weekly on-call rotation with conflict highlighting when the on-call person has approved leave
+
+### Optional improvements added
+- Calendar month view
+- Filtering by team member or status
+- Automatic on-call replacement suggestion
+- Leave approval workflow
+- Comments on leave requests
+- Basic automated tests
+- Docker setup
+- Better visual conflict highlighting
+
+## Stack
+
+| Layer    | Technology              |
+|----------|-------------------------|
+| Frontend | React, TypeScript, Jotai, MUI |
+| Backend  | Java Spring Boot        |
+| Database | PostgreSQL (Supabase-compatible) |
+| Runtime  | Docker Compose          |
 
 ## Local Development
 
